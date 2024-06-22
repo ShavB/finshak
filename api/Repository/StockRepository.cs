@@ -1,5 +1,6 @@
 using api.Data;
 using api.Dto.Stocks;
+using api.Helpers;
 using api.Interfaces;
 using api.Models;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,8 @@ namespace api.Repository
         public async Task<Stock?> DeleteAsync(int id)
         {
             var stock = await _context.Stocks.FirstOrDefaultAsync(x => x.Id == id);
-            if(stock == null){
+            if (stock == null)
+            {
                 return null;
             }
             _context.Remove(stock);
@@ -32,15 +34,39 @@ namespace api.Repository
             return stock;
         }
 
-        public async Task<List<Stock>> GetAllAsync()
+        public async Task<List<Stock>> GetAllAsync(QueryObject query)
         {
-           return await _context.Stocks.Include(com => com.Comments).ToListAsync();
+            var stock = _context.Stocks.Include(com => com.Comments).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(query.CompanyName))
+            {
+                stock = stock.Where(s => s.CompanyName.Contains(query.CompanyName));
+            }
+            if (!string.IsNullOrWhiteSpace(query.Symbol))
+            {
+                stock = stock.Where(s => s.Symbol.Contains(query.Symbol));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if (query.SortBy.Equals("Symbol", StringComparison.OrdinalIgnoreCase))
+                {
+                    stock = query.IsDescending ?
+                    stock.OrderByDescending(s => s.Symbol)
+                    : stock.OrderBy(s => s.Symbol);
+                }
+            }
+
+            var skipNumber = (query.PageNumber - 1) * query.PageSize;
+
+
+            return await stock.Skip(skipNumber).Take(query.PageSize).ToListAsync();
         }
 
         public async Task<Stock?> GetById(int id)
         {
             var stock = await _context.Stocks.Include(com => com.Comments).FirstOrDefaultAsync(i => i.Id == id);
-            if(stock == null){
+            if (stock == null)
+            {
                 return null;
             }
             return stock;
@@ -54,7 +80,8 @@ namespace api.Repository
         public async Task<Stock?> UpdateAsync(int id, UpdateStockRequestDto stockRequestDto)
         {
             var stock = await _context.Stocks.FirstOrDefaultAsync(x => x.Id == id);
-            if(stock == null){
+            if (stock == null)
+            {
                 return null;
             }
             stock.Symbol = stockRequestDto.Symbol;

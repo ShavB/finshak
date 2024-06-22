@@ -17,7 +17,7 @@ namespace api.Repository
 
         public async Task<Comment> CreateComment(Comment comment)
         {
-
+            
             await _applicationDBContext.Comments.AddAsync(comment);
             _applicationDBContext.SaveChanges();
             return comment;
@@ -26,17 +26,13 @@ namespace api.Repository
         public async Task<Comment?> DeleteComment(int id)
         {
             var existingComment = await _applicationDBContext.Comments.FirstOrDefaultAsync(i => i.Id == id);
-            if (existingComment == null)
-            {
+            if(existingComment == null){
                 return null;
             }
-
             _applicationDBContext.Comments.Remove(existingComment);
-            await _applicationDBContext.SaveChangesAsync();
-
+            _applicationDBContext.SaveChanges();
             return existingComment;
         }
-
 
         public async Task<List<Comment>> GetAllAsync()
         {
@@ -51,8 +47,7 @@ namespace api.Repository
         public async Task<Comment> UpdateComment(int id, Comment commentModel)
         {
             var comment = await _applicationDBContext.Comments.FindAsync(id);
-            if (comment == null)
-            {
+            if(comment == null){
                 return null;
             }
 
