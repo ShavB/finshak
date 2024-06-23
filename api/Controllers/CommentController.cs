@@ -1,16 +1,24 @@
 using api.Dto.Comments;
+using api.Extensions;
 using api.Interfaces;
 using api.Mappers;
+using api.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api.Controllers
 {
     [Route("api/comment")]
     [ApiController]
-    public class CommentController(ICommentRepository commentRepository, IStockRepository stockRepository) : ControllerBase
+    public class CommentController(
+        ICommentRepository commentRepository,
+        IStockRepository stockRepository,
+        UserManager<AppUser> userManager
+    ) : ControllerBase
     {
         private readonly ICommentRepository _commentRepository = commentRepository;
         private readonly IStockRepository _stockRepository = stockRepository;
+        private readonly UserManager<AppUser> _userManager = userManager;
 
         [HttpGet]
         public async Task<IActionResult> GetAllComments()
@@ -33,11 +41,13 @@ namespace api.Controllers
             }
             var comment = await _commentRepository.GetById(id);
             return Ok(comment?.ToCommentDto());
-
         }
 
         [HttpPost("{StockId:int}")]
-        public async Task<IActionResult> CreateComment([FromRoute] int StockId, CreateCommentDto createCommentDto)
+        public async Task<IActionResult> CreateComment(
+            [FromRoute] int StockId,
+            CreateCommentDto createCommentDto
+        )
         {
             if (!ModelState.IsValid)
             {
@@ -47,20 +57,33 @@ namespace api.Controllers
             {
                 return BadRequest("stock does not exists");
             }
+            var userName = User.GetUserName();
+            var appUser = await _userManager.FindByNameAsync(userName);
             var commentModel = createCommentDto.ToCommentFromCreate(StockId);
+            commentModel.AppuserId = appUser.Id;
             await _commentRepository.CreateComment(commentModel);
-            return CreatedAtAction(nameof(GetCommentById), new { id = commentModel.Id }, commentModel.ToCommentDto());
+            return CreatedAtAction(
+                nameof(GetCommentById),
+                new { id = commentModel.Id },
+                commentModel.ToCommentDto()
+            );
         }
 
         [HttpPut]
         [Route("{id:int}")]
-        public async Task<IActionResult> UpdateComment([FromRoute] int id, [FromBody] UpdateCommentRequestDto updateCommentRequestDto)
+        public async Task<IActionResult> UpdateComment(
+            [FromRoute] int id,
+            [FromBody] UpdateCommentRequestDto updateCommentRequestDto
+        )
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            var comment = await _commentRepository.UpdateComment(id, updateCommentRequestDto.ToCommentFromUpdate());
+            var comment = await _commentRepository.UpdateComment(
+                id,
+                updateCommentRequestDto.ToCommentFromUpdate()
+            );
             if (comment == null)
             {
                 return NotFound();

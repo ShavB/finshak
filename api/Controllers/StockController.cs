@@ -20,7 +20,7 @@ namespace api.Controllers
                 return BadRequest(ModelState);
             }
             var stocks = await _stockRepository.GetAllAsync(queryObject);
-            var stockData = stocks.Select(x => x.ToStockDto());
+            var stockData = stocks.Select(x => x.ToStockDto()).ToList();
             return Ok(stocks);
         }
 
@@ -48,12 +48,19 @@ namespace api.Controllers
             }
             var stockModel = stockDto.ToStockRequestDto();
             await _stockRepository.CreateAsync(stockModel);
-            return CreatedAtAction(nameof(GetById), new { id = stockModel.Id }, stockModel.ToStockDto());
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = stockModel.Id },
+                stockModel.ToStockDto()
+            );
         }
 
         [HttpPut]
         [Route("{id:int}")]
-        public async Task<IActionResult> UpdateData([FromRoute] int id, [FromBody] UpdateStockRequestDto updateStockRequestDto)
+        public async Task<IActionResult> UpdateData(
+            [FromRoute] int id,
+            [FromBody] UpdateStockRequestDto updateStockRequestDto
+        )
         {
             if (!ModelState.IsValid)
             {
@@ -65,7 +72,6 @@ namespace api.Controllers
                 return NotFound();
             }
             return Ok(stock.ToStockDto());
-
         }
 
         [HttpDelete]

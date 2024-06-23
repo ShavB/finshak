@@ -12,8 +12,8 @@ using api.Data;
 namespace api.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20240622111347_identity")]
-    partial class identity
+    [Migration("20240623103639_commentOneToOne")]
+    partial class commentOneToOne
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -50,6 +50,20 @@ namespace api.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "319cfcea-8320-45f6-a98a-96fe359cbcce",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = "7dbddd0d-007d-4d7e-afd1-5ab1c824db79",
+                            Name = "User",
+                            NormalizedName = "USER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -183,9 +197,6 @@ namespace api.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("MyProperty")
-                        .HasColumnType("int");
-
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -234,6 +245,10 @@ namespace api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AppuserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Context")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -250,9 +265,26 @@ namespace api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AppuserId");
+
                     b.HasIndex("StockId");
 
                     b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("api.Models.PortFolio", b =>
+                {
+                    b.Property<string>("AppuserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("StockId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AppuserId", "StockId");
+
+                    b.HasIndex("StockId");
+
+                    b.ToTable("Portfolios");
                 });
 
             modelBuilder.Entity("api.Models.Stock", b =>
@@ -342,16 +374,50 @@ namespace api.Migrations
 
             modelBuilder.Entity("api.Models.Comment", b =>
                 {
+                    b.HasOne("api.Models.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppuserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("api.Models.Stock", "Stock")
                         .WithMany("Comments")
                         .HasForeignKey("StockId");
 
+                    b.Navigation("AppUser");
+
                     b.Navigation("Stock");
+                });
+
+            modelBuilder.Entity("api.Models.PortFolio", b =>
+                {
+                    b.HasOne("api.Models.AppUser", "AppUser")
+                        .WithMany("PortFolios")
+                        .HasForeignKey("AppuserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("api.Models.Stock", "Stock")
+                        .WithMany("PortFolios")
+                        .HasForeignKey("StockId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Stock");
+                });
+
+            modelBuilder.Entity("api.Models.AppUser", b =>
+                {
+                    b.Navigation("PortFolios");
                 });
 
             modelBuilder.Entity("api.Models.Stock", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("PortFolios");
                 });
 #pragma warning restore 612, 618
         }
