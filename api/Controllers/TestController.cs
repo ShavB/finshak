@@ -22,4 +22,10 @@ public class TestController : ControllerBase
     {
         return Ok(name);
     }
+
+    [HttpGet("GetDAadadaba")]
+    public ActionResult GedadadatDB(string name, string lastName)
+    {
+        return Ok(name);
+    }
 }
