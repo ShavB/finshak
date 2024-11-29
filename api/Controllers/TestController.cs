@@ -16,4 +16,10 @@ public class TestController : ControllerBase
     {
         return Ok(name);
     }
+
+    [HttpGet("GetDAba")]
+    public ActionResult GetDB(string name, string lastName)
+    {
+        return Ok(name);
+    }
 }
